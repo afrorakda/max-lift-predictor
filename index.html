@@ -50,6 +50,7 @@
             flex: 1; padding: 10px; border: none; border-radius: 12px;
             background: transparent; color: #888; font-weight: 800;
             font-size: 0.8rem; cursor: pointer;
+            touch-action: manipulation; /* Zoom prevention */
         }
         .toggle-btn.active { background: #fff; color: var(--main); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 
@@ -69,6 +70,7 @@
             width: 50px; height: 50px; background: #fff; border: none;
             border-radius: 12px; font-size: 1.5rem; font-weight: 700;
             color: var(--main); cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            touch-action: manipulation; /* Zoom prevention */
         }
         .stepper-btn:active { transform: scale(0.95); background: var(--accent); }
         
@@ -110,6 +112,7 @@
             display: block; width: 60%; margin: 0 auto; background: var(--accent);
             color: var(--main); border: none; padding: 10px;
             border-radius: var(--radius); font-weight: 700; font-size: 13px; cursor: pointer;
+            touch-action: manipulation;
         }
 
         #modal {
@@ -137,9 +140,9 @@
     <div class="input-group">
         <label class="label">WEIGHT</label>
         <div class="stepper">
-            <button class="stepper-btn" id="wMinus" onclick="step('weight', -1)">−</button>
+            <button class="stepper-btn" onclick="step('weight', -1)">−</button>
             <input type="number" class="main-input" id="weight" value="60" oninput="calc()">
-            <button class="stepper-btn" id="wPlus" onclick="step('weight', 1)">+</button>
+            <button class="stepper-btn" onclick="step('weight', 1)">+</button>
         </div>
     </div>
 
@@ -155,7 +158,7 @@
     <div class="max-box">
         <div class="max-label">ESTIMATED 1RM</div>
         <div>
-            <span class="max-val" id="maxVal">0</span>
+            <span class="max-val" id="maxVal">70</span>
             <span class="max-unit" id="displayUnit">kg</span>
         </div>
     </div>
@@ -197,13 +200,7 @@
     function step(id, direction) {
         const el = document.getElementById(id);
         let n = parseFloat(el.value);
-        let increment = 0;
-
-        if (id === 'weight') {
-            increment = (currentUnit === 'kg') ? 2.5 : 5.0;
-        } else {
-            increment = 1;
-        }
+        let increment = (id === 'weight') ? ((currentUnit === 'kg') ? 2.5 : 5.0) : 1;
 
         n = n + (direction * increment);
         
@@ -219,20 +216,12 @@
     }
 
     function roundVal(val) {
-        if (currentUnit === 'kg') {
-            // Round to nearest 0.5
-            return Math.round(val * 2) / 2;
-        } else {
-            // Round to nearest integer for LBS
-            return Math.round(val);
-        }
+        return (currentUnit === 'kg') ? (Math.round(val * 2) / 2) : Math.round(val);
     }
 
     function calc() {
         const w = parseFloat(document.getElementById('weight').value) || 0;
         const r = parseFloat(document.getElementById('reps').value) || 0;
-        
-        // Epley Formula
         const oneRM = w * (1 + (r / 30));
         document.getElementById('maxVal').innerText = roundVal(oneRM);
 
@@ -244,16 +233,12 @@
             const val = roundVal(oneRM * (p / 100));
             const card = document.createElement('div');
             card.className = 'perc-card';
-            card.innerHTML = `
-                <span class="perc-num">${p}%</span>
-                <span class="perc-weight">${val}</span>
-            `;
+            card.innerHTML = `<span class="perc-num">${p}%</span><span class="perc-weight">${val}</span>`;
             grid.appendChild(card);
         });
     }
 
     calc();
-
     function showModal() { document.getElementById('modal').style.display = 'flex'; }
     function hideModal() { document.getElementById('modal').style.display = 'none'; }
 </script>
