@@ -39,7 +39,6 @@
         h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 8px; letter-spacing: -1px; }
         .subtitle { font-size: 0.85rem; color: #666; font-weight: 500; margin-bottom: 25px; }
 
-        /* Unit Toggle */
         .toggle-container {
             display: flex;
             background: var(--accent);
@@ -54,7 +53,6 @@
         }
         .toggle-btn.active { background: #fff; color: var(--main); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 
-        /* Input Section */
         .input-group { margin-bottom: 20px; text-align: left; }
         .label { font-size: 0.75rem; font-weight: 800; color: #999; margin-left: 5px; margin-bottom: 8px; display: block; }
         
@@ -81,7 +79,6 @@
             -webkit-text-fill-color: var(--main) !important; opacity: 1 !important;
         }
 
-        /* Results Area */
         .max-box {
             background: var(--main); color: #fff;
             border-radius: var(--radius); padding: 30px 20px; margin: 30px 0;
@@ -123,7 +120,7 @@
             background: #fff; width: 85%; max-width: 320px; padding: 30px;
             border-radius: var(--radius); text-align: left; position: relative;
         }
-        .close-x { position: absolute; top: 15px; right: 20px; font-size: 20px; color: #ccc; cursor: pointer; }
+        .close-x { position: absolute; top: 15px; right: 20px; font-size: 24px; color: #ccc; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -140,9 +137,9 @@
     <div class="input-group">
         <label class="label">WEIGHT</label>
         <div class="stepper">
-            <button class="stepper-btn" onclick="step('weight', -2.5)">−</button>
+            <button class="stepper-btn" id="wMinus" onclick="step('weight', -1)">−</button>
             <input type="number" class="main-input" id="weight" value="60" oninput="calc()">
-            <button class="stepper-btn" onclick="step('weight', 2.5)">+</button>
+            <button class="stepper-btn" id="wPlus" onclick="step('weight', 1)">+</button>
         </div>
     </div>
 
@@ -158,13 +155,12 @@
     <div class="max-box">
         <div class="max-label">ESTIMATED 1RM</div>
         <div>
-            <span class="max-val" id="maxVal">70</span>
+            <span class="max-val" id="maxVal">0</span>
             <span class="max-unit" id="displayUnit">kg</span>
         </div>
     </div>
 
-    <div class="perc-grid" id="percGrid">
-        </div>
+    <div class="perc-grid" id="percGrid"></div>
 
     <div class="footer-btns">
         <a href="https://ko-fi.com/afrorakda" target="_blank" class="kofi-btn">☕️buy me a coffee</a>
@@ -198,33 +194,54 @@
         calc();
     }
 
-    function step(id, val) {
+    function step(id, direction) {
         const el = document.getElementById(id);
-        let n = parseFloat(el.value) + val;
+        let n = parseFloat(el.value);
+        let increment = 0;
+
+        if (id === 'weight') {
+            increment = (currentUnit === 'kg') ? 2.5 : 5.0;
+        } else {
+            increment = 1;
+        }
+
+        n = n + (direction * increment);
+        
         if (id === 'reps') {
             if (n < 1) n = 1;
             if (n > 10) n = 10;
         } else {
             if (n < 0) n = 0;
         }
+        
         el.value = n;
         calc();
+    }
+
+    function roundVal(val) {
+        if (currentUnit === 'kg') {
+            // Round to nearest 0.5
+            return Math.round(val * 2) / 2;
+        } else {
+            // Round to nearest integer for LBS
+            return Math.round(val);
+        }
     }
 
     function calc() {
         const w = parseFloat(document.getElementById('weight').value) || 0;
         const r = parseFloat(document.getElementById('reps').value) || 0;
         
-        // Epley Formula: 1RM = W * (1 + R/30)
+        // Epley Formula
         const oneRM = w * (1 + (r / 30));
-        document.getElementById('maxVal').innerText = Math.round(oneRM * 10) / 10;
+        document.getElementById('maxVal').innerText = roundVal(oneRM);
 
         const percentages = [95, 90, 85, 80, 75, 70, 60, 50];
         const grid = document.getElementById('percGrid');
         grid.innerHTML = '';
 
         percentages.forEach(p => {
-            const val = Math.round((oneRM * (p / 100)) * 10) / 10;
+            const val = roundVal(oneRM * (p / 100));
             const card = document.createElement('div');
             card.className = 'perc-card';
             card.innerHTML = `
@@ -235,7 +252,6 @@
         });
     }
 
-    // Initial calc
     calc();
 
     function showModal() { document.getElementById('modal').style.display = 'flex'; }
