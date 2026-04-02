@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Max Lift Predictor</title>
+    
+    <link rel="icon" href="image_61.png">
+    <link rel="apple-touch-icon" href="image_61.png">
+
+    <style>
+        :root {
+            --main: #333;
+            --bg: #fff;
+            --accent: #eee;
+            --input-bg: #fafafa;
+            --radius: 15px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--main);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 420px;
+            padding: 40px 20px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 8px; letter-spacing: -1px; }
+        .subtitle { font-size: 0.85rem; color: #666; font-weight: 500; margin-bottom: 25px; }
+
+        /* Unit Toggle */
+        .toggle-container {
+            display: flex;
+            background: var(--accent);
+            border-radius: var(--radius);
+            padding: 4px;
+            margin-bottom: 25px;
+        }
+        .toggle-btn {
+            flex: 1; padding: 10px; border: none; border-radius: 12px;
+            background: transparent; color: #888; font-weight: 800;
+            font-size: 0.8rem; cursor: pointer;
+        }
+        .toggle-btn.active { background: #fff; color: var(--main); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+
+        /* Input Section */
+        .input-group { margin-bottom: 20px; text-align: left; }
+        .label { font-size: 0.75rem; font-weight: 800; color: #999; margin-left: 5px; margin-bottom: 8px; display: block; }
+        
+        .stepper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--input-bg);
+            border: 2px solid var(--accent);
+            border-radius: var(--radius);
+            padding: 5px;
+        }
+        .stepper-btn {
+            width: 50px; height: 50px; background: #fff; border: none;
+            border-radius: 12px; font-size: 1.5rem; font-weight: 700;
+            color: var(--main); cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .stepper-btn:active { transform: scale(0.95); background: var(--accent); }
+        
+        .main-input {
+            flex: 1; background: transparent; border: none; text-align: center;
+            font-size: 1.5rem; font-weight: 800; color: var(--main) !important;
+            outline: none; -webkit-appearance: none; width: 100%;
+            -webkit-text-fill-color: var(--main) !important; opacity: 1 !important;
+        }
+
+        /* Results Area */
+        .max-box {
+            background: var(--main); color: #fff;
+            border-radius: var(--radius); padding: 30px 20px; margin: 30px 0;
+        }
+        .max-label { font-size: 0.8rem; font-weight: 700; opacity: 0.7; margin-bottom: 5px; }
+        .max-val { font-size: 3.5rem; font-weight: 900; letter-spacing: -2px; }
+        .max-unit { font-size: 1rem; margin-left: 5px; opacity: 0.8; }
+
+        .perc-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+            text-align: left;
+        }
+        .perc-card {
+            background: #fff; border: 1px solid #f0f0f0;
+            border-radius: var(--radius); padding: 12px 15px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .perc-num { font-size: 0.7rem; font-weight: 800; color: #aaa; }
+        .perc-weight { font-size: 1.1rem; font-weight: 800; }
+
+        footer { margin-top: 50px; font-size: 11px; color: #aaa; line-height: 1.8; }
+        .footer-btns { margin-top: 30px; }
+        .kofi-btn {
+            display: inline-block; background: var(--main); color: #fff;
+            padding: 12px 25px; border-radius: var(--radius);
+            text-decoration: none; font-weight: bold; font-size: 14px; margin-bottom: 12px;
+        }
+        .home-btn {
+            display: block; width: 60%; margin: 0 auto; background: var(--accent);
+            color: var(--main); border: none; padding: 10px;
+            border-radius: var(--radius); font-weight: 700; font-size: 13px; cursor: pointer;
+        }
+
+        #modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 100;
+        }
+        .modal-content {
+            background: #fff; width: 85%; max-width: 320px; padding: 30px;
+            border-radius: var(--radius); text-align: left; position: relative;
+        }
+        .close-x { position: absolute; top: 15px; right: 20px; font-size: 20px; color: #ccc; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Max Lift Predictor</h1>
+    <p class="subtitle">Instant 1RM and training percentages.</p>
+
+    <div class="toggle-container">
+        <button class="toggle-btn active" id="unitKg" onclick="setUnit('kg')">KG</button>
+        <button class="toggle-btn" id="unitLbs" onclick="setUnit('lbs')">LBS</button>
+    </div>
+
+    <div class="input-group">
+        <label class="label">WEIGHT</label>
+        <div class="stepper">
+            <button class="stepper-btn" onclick="step('weight', -2.5)">−</button>
+            <input type="number" class="main-input" id="weight" value="60" oninput="calc()">
+            <button class="stepper-btn" onclick="step('weight', 2.5)">+</button>
+        </div>
+    </div>
+
+    <div class="input-group">
+        <label class="label">REPS (MAX 10)</label>
+        <div class="stepper">
+            <button class="stepper-btn" onclick="step('reps', -1)">−</button>
+            <input type="number" class="main-input" id="reps" value="5" oninput="calc()">
+            <button class="stepper-btn" onclick="step('reps', 1)">+</button>
+        </div>
+    </div>
+
+    <div class="max-box">
+        <div class="max-label">ESTIMATED 1RM</div>
+        <div>
+            <span class="max-val" id="maxVal">70</span>
+            <span class="max-unit" id="displayUnit">kg</span>
+        </div>
+    </div>
+
+    <div class="perc-grid" id="percGrid">
+        </div>
+
+    <div class="footer-btns">
+        <a href="https://ko-fi.com/afrorakda" target="_blank" class="kofi-btn">☕️buy me a coffee</a>
+        <button class="home-btn" onclick="showModal()">Add to Home Screen</button>
+    </div>
+
+    <footer>
+        <div>No login / No tracking / No ads / Browser only</div>
+        <div>Privacy Policy / afrorakda © 2026</div>
+    </footer>
+</div>
+
+<div id="modal" onclick="hideModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <span class="close-x" onclick="hideModal()">×</span>
+        <h3>📱 Install</h3>
+        <p>Add to your home screen.</p>
+        <p>🍏 <strong>iPhone (Safari):</strong><br>Tap Share, then Add to Home Screen.</p>
+        <p>🤖 <strong>Android (Chrome):</strong><br>Tap Menu (⋮), then Add to Home Screen.</p>
+    </div>
+</div>
+
+<script>
+    let currentUnit = 'kg';
+
+    function setUnit(u) {
+        currentUnit = u;
+        document.getElementById('unitKg').classList.toggle('active', u === 'kg');
+        document.getElementById('unitLbs').classList.toggle('active', u === 'lbs');
+        document.getElementById('displayUnit').innerText = u;
+        calc();
+    }
+
+    function step(id, val) {
+        const el = document.getElementById(id);
+        let n = parseFloat(el.value) + val;
+        if (id === 'reps') {
+            if (n < 1) n = 1;
+            if (n > 10) n = 10;
+        } else {
+            if (n < 0) n = 0;
+        }
+        el.value = n;
+        calc();
+    }
+
+    function calc() {
+        const w = parseFloat(document.getElementById('weight').value) || 0;
+        const r = parseFloat(document.getElementById('reps').value) || 0;
+        
+        // Epley Formula: 1RM = W * (1 + R/30)
+        const oneRM = w * (1 + (r / 30));
+        document.getElementById('maxVal').innerText = Math.round(oneRM * 10) / 10;
+
+        const percentages = [95, 90, 85, 80, 75, 70, 60, 50];
+        const grid = document.getElementById('percGrid');
+        grid.innerHTML = '';
+
+        percentages.forEach(p => {
+            const val = Math.round((oneRM * (p / 100)) * 10) / 10;
+            const card = document.createElement('div');
+            card.className = 'perc-card';
+            card.innerHTML = `
+                <span class="perc-num">${p}%</span>
+                <span class="perc-weight">${val}</span>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    // Initial calc
+    calc();
+
+    function showModal() { document.getElementById('modal').style.display = 'flex'; }
+    function hideModal() { document.getElementById('modal').style.display = 'none'; }
+</script>
+
+</body>
+</html>
